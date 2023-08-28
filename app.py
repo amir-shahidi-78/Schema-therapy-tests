@@ -3,7 +3,6 @@ import uuid
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ConversationHandler, MessageHandler, filters, ContextTypes
 from questions import Question
-import secretsData
 chat_id = -996265474
 
 admin_id = [2039072512, 285552144, 5924489961, 350046550]  # Replace with the admin's user ID
