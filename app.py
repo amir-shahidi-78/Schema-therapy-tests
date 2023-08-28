@@ -10,7 +10,6 @@ admin_id = [2039072512, 285552144, 5924489961, 350046550]  # Replace with the ad
 
 GET_NAME = range(1)
 
-
 async def generate_token(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.id in admin_id:
         token = str(uuid.uuid4())  # Generate a unique token
