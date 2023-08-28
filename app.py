@@ -3,6 +3,7 @@ import uuid
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ConversationHandler, MessageHandler, filters, ContextTypes
 from questions import Question
+import os
 chat_id = -996265474
 
 admin_id = [2039072512, 285552144, 5924489961, 350046550]  # Replace with the admin's user ID
@@ -114,7 +115,7 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                         reply_markup=Question.keyboard_generator('Q1', active_index=-1))
     return ConversationHandler.END
 
-app = ApplicationBuilder().token(secretsData.TOKEN).build()
+app = ApplicationBuilder().token(os.environ.get('TELEGRAM_TOKEN')).build()
 
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler(["hello", "start", "salam"], hello)],
