@@ -2,7 +2,7 @@ import re
 import uuid
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ConversationHandler, MessageHandler, filters, ContextTypes
-from questions import Question
+from questions import Schema_Questions , Schema_Mind_Questions
 import os
 chat_id = -996265474
 
@@ -29,13 +29,13 @@ async def generate_token(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 def show_results(name , **data):
     ret=""
-    result = Question.resault_tempalte
+    result = Schema_Questions.resault_tempalte
     for key, value in result.items():
         result[key] = 0
     ret = f'Entered name : {name}\n\n'
 
     for key, value in result.items():
-        for i in Question.resault_map[key]:
+        for i in Schema_Questions.resault_map[key]:
             temp_key = 'Q'+str(i)
             if data.get(temp_key) != None:
                 result[key] += int(data[temp_key])
@@ -67,7 +67,7 @@ async def btn_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if context.user_data.get(q_key) != int(q_value):
         context.user_data[q_key] = int(q_value)
-        await update.callback_query.edit_message_reply_markup(Question.keyboard_generator(q_key, active_index=context.user_data.get(q_key)))
+        await update.callback_query.edit_message_reply_markup(Schema_Questions.keyboard_generator(q_key, active_index=context.user_data.get(q_key)))
 
 
 async def next_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -75,14 +75,14 @@ async def next_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current = 'Q' + str(int(next[1:]) - 1)
     await update.callback_query.answer()
     if context.user_data.get(current) != None:
-        await update.callback_query.edit_message_text(text=Question.QUESTIONS.get(next), reply_markup=Question.keyboard_generator(next, active_index=context.user_data.get(next)))
+        await update.callback_query.edit_message_text(text=Schema_Questions.QUESTIONS.get(next), reply_markup=Schema_Questions.keyboard_generator(next, active_index=context.user_data.get(next)))
 
 
 async def prev_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     previous = update.callback_query.data.split('-')[1]
     await update.callback_query.answer()
 
-    await update.callback_query.edit_message_text(text=Question.QUESTIONS.get(previous), reply_markup=Question.keyboard_generator(previous, active_index=context.user_data.get(previous)))
+    await update.callback_query.edit_message_text(text=Schema_Questions.QUESTIONS.get(previous), reply_markup=Schema_Questions.keyboard_generator(previous, active_index=context.user_data.get(previous)))
 
 
 async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -110,9 +110,9 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data['name'] = name
     if context.user_data.get('authorized'):
-        await update.message.reply_text(text=Question.help_text)
-        await update.message.reply_text(f"{Question.QUESTIONS.get('Q1')}",
-                                        reply_markup=Question.keyboard_generator('Q1', active_index=-1))
+        await update.message.reply_text(text=Schema_Questions.help_text)
+        await update.message.reply_text(f"{Schema_Questions.QUESTIONS.get('Q1')}",
+                                        reply_markup=Schema_Questions.keyboard_generator('Q1', active_index=-1))
     return ConversationHandler.END
 
 app = ApplicationBuilder().token(os.environ.get('TELEGRAM_TOKEN')).build()
