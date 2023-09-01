@@ -119,13 +119,16 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     last_question = int(update.callback_query.data.split('-')[1])
     if context.user_data.get(last_question) != None:
-        await update.callback_query.answer('نتیجه برای مشاور شما ارسال شد')
+        #await update.callback_query.answer('!نتیجه برای مشاور شما ارسال شد')
         await context.bot.send_message(chat_id=chat_id, text=current_phase.current.show_results(context.user_data))
         # await context.bot.edit_message_text(text=current_phase.current.help_text, chat_id=update._effective_chat.id, message_id=context.user_data.get('help'))
         if current_phase.get_next():
             # await update.message.reply_text(text="آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.")
             # await update.message.reply_text(text="در ادامه آموزش ذهنیت های طرحواره ای:")
-            temp=await update.callback_query.edit_message_text(text='آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' + '\n\n' + "در ادامه آموزش ذهنیت های طرحواره ای:", reply_markup=None)
+            temp=await update.callback_query.edit_message_text(text='<b><i>آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' + 
+                                                               '\n\n' + "در ادامه آموزش ذهنیت های طرحواره ای: </i></b>", 
+                                                               reply_markup=None ,
+                                                               parse_mode='html')
             
             await context.bot.send_message(chat_id=update.effective_chat.id,
                                            text=current_phase.current.QUESTIONS.get(123),
@@ -139,7 +142,9 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             
             await context.bot.delete_message(update.effective_chat.id,context.user_data['help'])
-            await context.bot.edit_message_text('آزمون تمام شد و نتیجه برای مشاور شما ارسال شد.',update.effective_chat.id,context.user_data['help2'])
+            await context.bot.edit_message_text('<b>آزمون تمام شد و نتیجه برای مشاور شما ارسال شد🥳</b> ',
+                                                update.effective_chat.id,context.user_data['help2'],
+                                                parse_mode='html')
             current_phase.reset()
             await update.effective_message.delete()    
 
@@ -156,14 +161,15 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data['name'] = name
     if context.user_data.get('authorized'):
+        await update.message.reply_text(text=questions.global_help_text(name))
         help_message = await update.message.reply_text(text=current_phase.current.help_text)
-        context.user_data['help'] = help_message.id
+        context.user_data['help1'] = help_message.id
         await update.message.reply_text(f"{current_phase.current.QUESTIONS.get(90)}",
                                         reply_markup=current_phase.current.keyboard_generator(90, active_index=-1))
     return ConversationHandler.END
 
 app = ApplicationBuilder().token(os.environ.get(
-    'TELEGRAM_TOKEN')).build()
+    'TELEGRAM_TOKEN','1484846841:AAFwouB27Sys8U83Nm3C6p6nUA63cNNyMGM')).build()
 
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler(["hello", "start", "salam"], hello)],

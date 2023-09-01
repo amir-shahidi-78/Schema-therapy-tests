@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
-
+def global_help_text(name:str):
+    global_help_text = f"ُسلام {name} عزیز به ربات ما خوش اومدی 🤝 \n\n این ربات شامل دو آزمون طرحواره ها و ذهنیت های طرحواره ای است، که به ترتیب 90 و 124 سوال دارند \n\n زمان تقریبی برای هر دو آزمون 40 دقیقه است"
+    return global_help_text
 class Quesion:
     TEST_NAME = ''
     QUESTIONS = {}
