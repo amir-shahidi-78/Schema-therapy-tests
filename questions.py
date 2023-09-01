@@ -12,7 +12,7 @@ class Quesion:
 
     def show_results(self, user_data):
         def fetch_answers_of_a_category(category_questions, user_data):
-            return [user_data.get(quesion, 0) for quesion in category_questions]
+            return [user_data['answers'].get(quesion, 0) for quesion in category_questions]
         name = user_data.get('name', '')
         
         result = f'نام:     {name}\n\n{self.TEST_NAME}\n\n'
@@ -341,7 +341,7 @@ class Schema_Mind_Questions(Quesion):
 
     def show_results(self, user_data):
         def fetch_answers_of_a_category(category_questions, user_data):
-            return [user_data.get(question, 0) for question in category_questions]
+            return [user_data['answers'].get(question, 0) for question in category_questions]
         
         name = user_data.get('name', '')
             
