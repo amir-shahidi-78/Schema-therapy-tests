@@ -134,16 +134,16 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                            text=current_phase.current.QUESTIONS.get(123),
                                            reply_markup=current_phase.current.keyboard_generator(123))
             name = context.user_data.get('name',' ')
-            help = context.user_data['help']
+            help = context.user_data['messages']
             context.user_data.clear()
             context.user_data['name']=name
-            context.user_data['help']=help
-            context.user_data['help2']=temp.id
+            context.user_data['messages']=help
+            context.user_data['messages'].append(temp.id)
         else:
-            
-            await context.bot.delete_message(update.effective_chat.id,context.user_data['help'])
+            await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][0])
+            await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][1])
             await context.bot.edit_message_text('<b>آزمون تمام شد و نتیجه برای مشاور شما ارسال شد🥳</b> ',
-                                                update.effective_chat.id,context.user_data['help2'],
+                                                update.effective_chat.id,context.user_data['messages'][2],
                                                 parse_mode='html')
             current_phase.reset()
             await update.effective_message.delete()    
@@ -161,9 +161,11 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data['name'] = name
     if context.user_data.get('authorized'):
-        await update.message.reply_text(text=questions.global_help_text(name))
+        context.user_data['messages'] = list()
+        help_message = await update.message.reply_text(text=questions.global_help_text(name))
+        context.user_data['messages'].append(help_message.id)
         help_message = await update.message.reply_text(text=current_phase.current.help_text)
-        context.user_data['help1'] = help_message.id
+        context.user_data['messages'].append(help_message.id)
         await update.message.reply_text(f"{current_phase.current.QUESTIONS.get(90)}",
                                         reply_markup=current_phase.current.keyboard_generator(90, active_index=-1))
     return ConversationHandler.END
