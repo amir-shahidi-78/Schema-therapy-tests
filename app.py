@@ -1,7 +1,8 @@
+
 from functools import wraps
 import re
 import uuid
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ConversationHandler, MessageHandler, filters, ContextTypes
 import questions
 import os
@@ -11,7 +12,7 @@ chat_id = -996265474
 
 admin_id = [2039072512, 285552144, 5924489961, 350046550]
 
-GET_NAME = range(1)
+GET_NAME, SHOW_HELP, SHOW_QUESTIONS = range(3)
 
 class QuestionPhase:
     def __init__(self, question_list) -> None:
@@ -125,7 +126,7 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # await update.message.reply_text(text="آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.")
             # await update.message.reply_text(text="در ادامه آموزش ذهنیت های طرحواره ای:")
             temp=await update.callback_query.edit_message_text(text='<b><i>آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' + 
-                                                               '\n\n' + "در ادامه آموزش ذهنیت های طرحواره ای: </i></b>", 
+                                                               '\n\n' + "در ادامه آزمون ذهنیت های طرحواره ای: </i></b>", 
                                                                reply_markup=None ,
                                                                parse_mode='html')
             
@@ -147,6 +148,9 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    button = [
+        [InlineKeyboardButton('فهمیدم', callback_data='SHOW_HELP')]
+    ]
     name = update.message.text
     if len(name) < 3:
         await context.bot.send_message(chat_id=update.effective_chat.id,
@@ -158,21 +162,44 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('authorized'):
         context.user_data['messages'] = list()
         context.user_data['answers'] = dict()
-        help_message = await update.message.reply_text(text=questions.global_help_text(name))
+        help_message = await update.message.reply_text(text=questions.global_help_text(name),reply_markup=InlineKeyboardMarkup(button))
         context.user_data['messages'].append(help_message.id)
-        help_message = await update.message.reply_text(text=current_phase.current.help_text)
-        context.user_data['messages'].append(help_message.id)
-        await update.message.reply_text(f"{current_phase.current.QUESTIONS.get(1)}",
+        
+        
+    return SHOW_HELP
+
+
+async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    button = [[InlineKeyboardButton('فهمیدم', callback_data='SHOW_QUESTIONS')]]
+    await update.callback_query.edit_message_reply_markup(reply_markup=None)
+    
+    help_message = await update.effective_message.reply_text(
+                                                  text=current_phase.current.help_text,
+                                                  reply_markup=InlineKeyboardMarkup(button))
+    context.user_data['messages'].append(help_message.id)
+    
+    return SHOW_QUESTIONS
+    
+
+
+
+async def show_questions(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.edit_message_reply_markup(reply_markup=None)
+    
+    await update.effective_message.reply_text(f"{current_phase.current.QUESTIONS.get(1)}",
                                         reply_markup=current_phase.current.keyboard_generator(1, active_index=-1))
     return ConversationHandler.END
 
+
 app = ApplicationBuilder().token(os.environ.get(
-    'TELEGRAM_TOKEN')).build()
+    'TELEGRAM_TOKEN', '1484846841:AAFhy7kv1KUcAJVTcQsKIiDCC3q2CW1Z0WM')).build()
 
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler(["hello", "start", "salam"], hello)],
     states={
         GET_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+        SHOW_HELP: [CallbackQueryHandler(show_help, re.compile(r'^SHOW_HELP'))],
+        SHOW_QUESTIONS: [CallbackQueryHandler(show_questions, re.compile(r'^SHOW_QUESTIONS'))],
     },
     fallbacks=[]
 )
