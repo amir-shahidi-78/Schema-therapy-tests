@@ -171,7 +171,7 @@ async def show_questions(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 app = ApplicationBuilder().token(os.environ.get(
-    'TELEGRAM_TOKEN', '1484846841:AAFhy7kv1KUcAJVTcQsKIiDCC3q2CW1Z0WM')).build()
+    'TELEGRAM_TOKEN')).build()
 
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler(["hello", "start", "salam"], hello)],
@@ -188,4 +188,11 @@ app.add_handler(CallbackQueryHandler(next_btn, re.compile(r'^next')))
 app.add_handler(CallbackQueryHandler(prev_btn, re.compile(r'^previous')))
 app.add_handler(CallbackQueryHandler(finish_btn, re.compile(r'^finish')))
 app.add_handler(CallbackQueryHandler(btn_click))
-app.run_polling()
+app.run_webhook(
+    listen='0.0.0.0',
+    port=8443,
+    secret_token=os.environ.get('TELEGRAM_TOKEN'),
+    key='private.key',
+    cert='cert.pem',
+    webhook_url='https://opoli.store:8443'
+)
