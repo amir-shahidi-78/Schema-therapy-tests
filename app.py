@@ -191,7 +191,7 @@ app.add_handler(CallbackQueryHandler(btn_click))
 app.run_webhook(
     listen='0.0.0.0',
     port=8443,
-    secret_token=os.environ.get('TELEGRAM_TOKEN'),
+    secret_token=os.environ.get('WEBHOOK_SECRET'),
     key='private.key',
     cert='cert.pem',
     webhook_url='https://opoli.store:8443'
