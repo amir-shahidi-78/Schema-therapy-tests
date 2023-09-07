@@ -350,3 +350,10 @@ class Schema_Mind_Questions(Quesion):
             result += f'{category} --> { round(sum(fetch_answers_of_a_category(questions, user_data)) / len(questions),1)}\n'
             
         return result
+    
+    
+def get_phase(phase='Schema_Questions'):
+    if phase==2:
+        return Schema_Mind_Questions()
+    else:
+        return Schema_Questions()

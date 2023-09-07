@@ -7,6 +7,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
 import questions
 import os
 
+
 chat_id = -996265474
 
 
@@ -14,38 +15,8 @@ admin_id = [2039072512, 285552144, 5924489961, 350046550]
 
 GET_NAME, SHOW_HELP, SHOW_QUESTIONS = range(3)
 
-class QuestionPhase:
-    def __init__(self, question_list) -> None:
-        self.current_index = 0
-        self.questions = question_list
-        self._current = question_list[self.current_index]
-    
-    @property
-    def current(self):
-        return self._current
-    
-    @current.setter
-    def current(self, value):
-        self._current = value
-            
-    def reset(self):
-        self.current_index = 0
-        self._current = self.questions[self.current_index]
-
-    def get_next(self):
-        next = self.current_index + 1
-        if next < len(self.questions): 
-            self.current_index = next
-            self._current = self.questions[next]
-            return True
-        return False
-
-original_phases =[
-    questions.Schema_Questions(),
-    questions.Schema_Mind_Questions()
-]
-
-current_phase = QuestionPhase(original_phases)
+default_q_schema=90
+default_q_mind_schema=124
 
 def only_admins(func):
     @wraps(func)
@@ -97,7 +68,7 @@ async def btn_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q_value = int(data.split('-')[1])
     if context.user_data['answers'].get(q_key) != q_value:
         context.user_data['answers'][q_key]= q_value
-        await update.callback_query.edit_message_reply_markup(current_phase.current.keyboard_generator(q_key, active_index=context.user_data['answers'].get(q_key)))
+        await update.callback_query.edit_message_reply_markup(questions.get_phase(context.user_data['phase']).keyboard_generator(q_key, active_index=context.user_data['answers'].get(q_key)))
 
 
 async def next_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -105,14 +76,14 @@ async def next_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current = next - 1
     await update.callback_query.answer()
     if context.user_data['answers'].get(current) != None:
-        await update.callback_query.edit_message_text(text=current_phase.current.QUESTIONS.get(next), reply_markup=current_phase.current.keyboard_generator(next, active_index=context.user_data['answers'].get(next)))
+        await update.callback_query.edit_message_text(text=questions.get_phase(context.user_data['phase']).QUESTIONS.get(next), reply_markup=questions.get_phase(context.user_data['phase']).keyboard_generator(next, active_index=context.user_data['answers'].get(next)))
 
 
 async def prev_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     previous = int(update.callback_query.data.split('-')[1])
     await update.callback_query.answer()
 
-    await update.callback_query.edit_message_text(text=current_phase.current.QUESTIONS.get(previous), reply_markup=current_phase.current.keyboard_generator(previous, active_index=context.user_data['answers'].get(previous)))
+    await update.callback_query.edit_message_text(text=questions.get_phase(context.user_data['phase']).QUESTIONS.get(previous), reply_markup=questions.get_phase(context.user_data['phase']).keyboard_generator(previous, active_index=context.user_data['answers'].get(previous)))
 
 
 async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -120,28 +91,28 @@ async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_question = int(update.callback_query.data.split('-')[1])
     if context.user_data['answers'].get(last_question) != None:
         #await update.callback_query.answer('!نتیجه برای مشاور شما ارسال شد')
-        await context.bot.send_message(chat_id=chat_id, text=current_phase.current.show_results(context.user_data))
+        await context.bot.send_message(chat_id=chat_id, text=questions.get_phase(context.user_data['phase']).show_results(context.user_data))
         # await context.bot.edit_message_text(text=current_phase.current.help_text, chat_id=update._effective_chat.id, message_id=context.user_data.get('help'))
-        if current_phase.get_next():
+        if context.user_data['phase']==1:
             # await update.message.reply_text(text="آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.")
             # await update.message.reply_text(text="در ادامه آموزش ذهنیت های طرحواره ای:")
             temp=await update.callback_query.edit_message_text(text='<b><i>آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' + 
                                                                '\n\n' + "در ادامه آزمون ذهنیت های طرحواره ای: </i></b>", 
                                                                reply_markup=None ,
                                                                parse_mode='html')
-            
+            context.user_data['phase']=2
             await context.bot.send_message(chat_id=update.effective_chat.id,
-                                           text=current_phase.current.QUESTIONS.get(1),
-                                           reply_markup=current_phase.current.keyboard_generator(1))
+                                           text=questions.get_phase(context.user_data['phase']).QUESTIONS.get(default_q_mind_schema),
+                                           reply_markup=questions.get_phase(context.user_data['phase']).keyboard_generator(default_q_mind_schema))
             context.user_data['answers'].clear()
             context.user_data['messages'].append(temp.id)
+            
         else:
             await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][0])
             await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][1])
             await context.bot.edit_message_text('<b>آزمون تمام شد و نتیجه برای مشاور شما ارسال شد🥳</b> ',
                                                 update.effective_chat.id,context.user_data['messages'][2],
                                                 parse_mode='html')
-            current_phase.reset()
             await update.effective_message.delete()    
 
         return ConversationHandler.END
@@ -162,10 +133,9 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('authorized'):
         context.user_data['messages'] = list()
         context.user_data['answers'] = dict()
+        context.user_data['phase']=1
         help_message = await update.message.reply_text(text=questions.global_help_text(name),reply_markup=InlineKeyboardMarkup(button))
         context.user_data['messages'].append(help_message.id)
-        
-        
     return SHOW_HELP
 
 
@@ -174,7 +144,7 @@ async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_reply_markup(reply_markup=None)
     
     help_message = await update.effective_message.reply_text(
-                                                  text=current_phase.current.help_text,
+                                                  text=questions.get_phase(1).help_text,
                                                   reply_markup=InlineKeyboardMarkup(button))
     context.user_data['messages'].append(help_message.id)
     
@@ -186,8 +156,9 @@ async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_questions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_reply_markup(reply_markup=None)
     
-    await update.effective_message.reply_text(f"{current_phase.current.QUESTIONS.get(1)}",
-                                        reply_markup=current_phase.current.keyboard_generator(1, active_index=-1))
+    temp=await update.effective_message.reply_text(f"{questions.get_phase(context.user_data['phase']).QUESTIONS[default_q_schema]}",
+                                        reply_markup=questions.get_phase(context.user_data['phase']).keyboard_generator(question=default_q_schema, active_index=-1))
+    context.user_data['messages'].append(temp.id)
     return ConversationHandler.END
 
 
