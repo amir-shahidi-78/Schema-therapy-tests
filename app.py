@@ -14,17 +14,18 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-logger= logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-chat_id = -996265474
+chat_id = 6316791070
+dehghan_chat_id = 6002335670
 
-
-admin_id = [2039072512, 285552144, 5924489961, 350046550]
+admin_id = [2039072512, 285552144, 5924489961, 350046550, 6316791070]
 
 GET_NAME, SHOW_HELP, SHOW_QUESTIONS = range(3)
 
-default_q_schema=90
-default_q_mind_schema=124
+default_q_schema = 1
+default_q_mind_schema = 1
+
 
 def only_admins(func):
     @wraps(func)
@@ -75,8 +76,8 @@ async def btn_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q_key = int(data.split('-')[0])
     q_value = int(data.split('-')[1])
     if context.user_data['answers'].get(q_key) != q_value:
-        context.user_data['answers'][q_key]= q_value
-        await update.callback_query.edit_message_reply_markup(questions.get_phase(context.user_data.get('phase',1)).keyboard_generator(q_key, active_index=context.user_data['answers'].get(q_key)))
+        context.user_data['answers'][q_key] = q_value
+        await update.callback_query.edit_message_reply_markup(questions.get_phase(context.user_data.get('phase', 1)).keyboard_generator(q_key, active_index=context.user_data['answers'].get(q_key)))
 
 
 async def next_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -97,31 +98,33 @@ async def prev_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def finish_btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     last_question = int(update.callback_query.data.split('-')[1])
+    current_test = questions.get_phase(
+        context.user_data.get('phase')).TEST_NAME
+    test_result = f"کاربر <b>{context.user_data.get('name', '')}</b> تست <b>{current_test}</b> داد"
     if context.user_data['answers'].get(last_question) != None:
-        #await update.callback_query.answer('!نتیجه برای مشاور شما ارسال شد')
-        await context.bot.send_message(chat_id=chat_id, text=questions.get_phase(context.user_data.get('phase')).show_results(context.user_data))
-        # await context.bot.edit_message_text(text=current_phase.current.help_text, chat_id=update._effective_chat.id, message_id=context.user_data.get('help'))
-        if context.user_data['phase']==1:
-            # await update.message.reply_text(text="آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.")
-            # await update.message.reply_text(text="در ادامه آموزش ذهنیت های طرحواره ای:")
-            temp=await update.callback_query.edit_message_text(text='<b><i>آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' + 
-                                                               '\n\n' + "در ادامه آزمون ذهنیت های طرحواره ای: </i></b>", 
-                                                               reply_markup=None ,
-                                                               parse_mode='html')
-            context.user_data['phase']=2
+        await context.bot.send_message(chat_id=dehghan_chat_id, text=questions.get_phase(context.user_data.get('phase')).show_results(context.user_data))
+        await context.bot.send_message(chat_id=chat_id, text=test_result, parse_mode='html')
+
+        if context.user_data['phase'] == 1:
+            temp = await update.callback_query.edit_message_text(text='<b><i>آزمون طرحواره پایان یافت و نتیجه برای مشاور شما ارسال شد.' +
+                                                                 '\n\n' + "در ادامه آزمون ذهنیت های طرحواره ای: </i></b>",
+                                                                 reply_markup=None,
+                                                                 parse_mode='html')
+            context.user_data['phase'] = 2
             await context.bot.send_message(chat_id=update.effective_chat.id,
-                                           text=questions.get_phase(context.user_data.get('phase')).QUESTIONS.get(default_q_mind_schema),
+                                           text=questions.get_phase(context.user_data.get(
+                                               'phase')).QUESTIONS.get(default_q_mind_schema),
                                            reply_markup=questions.get_phase(context.user_data.get('phase')).keyboard_generator(default_q_mind_schema))
             context.user_data['answers'].clear()
             context.user_data['messages'].append(temp.id)
-            
+
         else:
-            await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][0])
-            await context.bot.delete_message(update.effective_chat.id,context.user_data['messages'][1])
+            await context.bot.delete_message(update.effective_chat.id, context.user_data['messages'][0])
+            await context.bot.delete_message(update.effective_chat.id, context.user_data['messages'][1])
             await context.bot.edit_message_text('<b>آزمون تمام شد و نتیجه برای مشاور شما ارسال شد🥳</b> ',
-                                                update.effective_chat.id,context.user_data['messages'][2],
+                                                update.effective_chat.id, context.user_data['messages'][2],
                                                 parse_mode='html')
-            await update.effective_message.delete()    
+            await update.effective_message.delete()
 
         return ConversationHandler.END
 
@@ -141,8 +144,8 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('authorized'):
         context.user_data['messages'] = list()
         context.user_data['answers'] = dict()
-        context.user_data['phase']=1
-        help_message = await update.message.reply_text(text=questions.global_help_text(name),reply_markup=InlineKeyboardMarkup(button))
+        context.user_data['phase'] = 1
+        help_message = await update.message.reply_text(text=questions.global_help_text(name), reply_markup=InlineKeyboardMarkup(button))
         context.user_data['messages'].append(help_message.id)
     return SHOW_HELP
 
@@ -150,22 +153,20 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     button = [[InlineKeyboardButton('فهمیدم', callback_data='SHOW_QUESTIONS')]]
     await update.callback_query.edit_message_reply_markup(reply_markup=None)
-    
-    help_message = await update.effective_message.reply_text(
-                                                  text=questions.get_phase(1).help_text,
-                                                  reply_markup=InlineKeyboardMarkup(button))
-    context.user_data['messages'].append(help_message.id)
-    
-    return SHOW_QUESTIONS
-    
 
+    help_message = await update.effective_message.reply_text(
+        text=questions.get_phase(1).help_text,
+        reply_markup=InlineKeyboardMarkup(button))
+    context.user_data['messages'].append(help_message.id)
+
+    return SHOW_QUESTIONS
 
 
 async def show_questions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.edit_message_reply_markup(reply_markup=None)
-    
-    temp=await update.effective_message.reply_text(f"{questions.get_phase(context.user_data.get('phase',1)).QUESTIONS[default_q_schema]}",
-                                        reply_markup=questions.get_phase(context.user_data.get('phase')).keyboard_generator(question=default_q_schema, active_index=-1))
+
+    temp = await update.effective_message.reply_text(f"{questions.get_phase(context.user_data.get('phase',1)).QUESTIONS[default_q_schema]}",
+                                                     reply_markup=questions.get_phase(context.user_data.get('phase')).keyboard_generator(question=default_q_schema, active_index=-1))
     context.user_data['messages'].append(temp.id)
     return ConversationHandler.END
 
@@ -194,5 +195,5 @@ app.run_webhook(
     secret_token=os.environ.get('WEBHOOK_SECRET'),
     key='private.key',
     cert='cert.pem',
-    webhook_url='https://opoli.store:8443'
+    webhook_url='https://cleverdirect.run.place:8443'
 )
